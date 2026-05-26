@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect Claude to Holistics via MCP — Flodesk Data Team</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FAFAF8;
+      --surface: #FFFFFF;
+      --surface-alt: #F3F1EC;
+      --border: #E2DFD7;
+      --border-strong: #C9C4B8;
+      --text-primary: #1A1917;
+      --text-secondary: #6B6860;
+      --text-tertiary: #9A9589;
+      --accent: #C96442;
+      --accent-light: #FCEEE8;
+      --accent-dark: #A34E30;
+      --green: #3A7D5C;
+      --green-light: #EAF5EF;
+      --yellow: #C4962C;
+      --yellow-light: #FEF8E8;
+      --red: #C04B4B;
+      --red-light: #FDEAEA;
+      --code-bg: #2C2A25;
+      --code-text: #E8E4DC;
+      --code-keyword: #E8A87C;
+      --code-string: #A8D4A0;
+      --code-comment: #7A7670;
+      --radius: 10px;
+      --shadow-sm: 0 1px 2px rgba(26,25,23,0.04);
+      --shadow-md: 0 4px 16px rgba(26,25,23,0.06);
+      --shadow-lg: 0 8px 32px rgba(26,25,23,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.7;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- HEADER ---- */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250,250,248,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+    .header-brand svg { flex-shrink: 0; }
+    .header-tag {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 72px 32px 48px;
+    }
+    .hero-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: clamp(32px, 5vw, 48px);
+      line-height: 1.15;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      max-width: 680px;
+    }
+    .hero-desc {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      line-height: 1.7;
+    }
+
+    /* ---- LAYOUT ---- */
+    .page-layout {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 32px 80px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 56px;
+    }
+    @media (max-width: 840px) {
+      .page-layout { grid-template-columns: 1fr; gap: 0; }
+      .sidebar { display: none; }
+    }
+
+    /* ---- SIDEBAR NAV ---- */
+    .sidebar {
+      position: sticky;
+      top: 80px;
+      align-self: start;
+    }
+    .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+    .sidebar a {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border-left: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .sidebar a:hover { color: var(--text-primary); background: var(--surface-alt); }
+    .sidebar a.active {
+      color: var(--accent);
+      font-weight: 600;
+      border-left-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    /* ---- MAIN CONTENT ---- */
+    .content { min-width: 0; }
+
+    .content section {
+      margin-bottom: 56px;
+      scroll-margin-top: 100px;
+    }
+
+    .content h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 26px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .content h3 {
+      font-weight: 600;
+      font-size: 17px;
+      margin-top: 32px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .section-lead {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .content p { margin-bottom: 16px; color: var(--text-primary); }
+
+    /* ---- CALLOUT BOXES ---- */
+    .callout {
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin: 20px 0;
+      font-size: 15px;
+      line-height: 1.65;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .callout-icon { flex-shrink: 0; font-size: 18px; margin-top: 1px; }
+    .callout.warning { background: var(--yellow-light); border: 1px solid #E8D99A; }
+    .callout.info { background: var(--accent-light); border: 1px solid #F0CFC0; }
+    .callout.danger { background: var(--red-light); border: 1px solid #F0BABA; }
+    .callout.success { background: var(--green-light); border: 1px solid #B0D8C2; }
+    .callout a { color: var(--accent-dark); font-weight: 500; }
+
+    /* ---- CODE BLOCKS ---- */
+    .code-block-wrapper {
+      margin: 20px 0;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    .code-header {
+      background: #3A3733;
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+    }
+    .code-copy {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      background: transparent;
+      border: 1px solid #5A5650;
+      border-radius: 5px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .code-copy:hover { background: #4A4740; color: #ddd; }
+    .code-copy.copied { color: var(--green); border-color: var(--green); }
+    pre {
+      background: var(--code-bg);
+      padding: 20px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--code-text);
+    }
+    pre .k { color: var(--code-keyword); }
+    pre .s { color: var(--code-string); }
+    pre .c { color: var(--code-comment); }
+
+    /* ---- STEP CARDS ---- */
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 28px 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .step-card h3 { margin-top: 0; font-size: 18px; }
+
+    /* ---- TABLES ---- */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    thead { background: var(--surface-alt); }
+    th {
+      text-align: left;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* ---- INLINE CODE ---- */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ---- RULE LIST ---- */
+    .rules-list { list-style: none; margin: 16px 0; }
+    .rules-list li {
+      padding: 8px 0;
+      padding-left: 28px;
+      position: relative;
+      font-size: 15px;
+    }
+    .rules-list li::before {
+      position: absolute;
+      left: 0;
+      font-size: 15px;
+    }
+    .rules-list li.do::before { content: '✅'; }
+    .rules-list li.dont::before { content: '🚫'; }
+
+    /* ---- CONTACT CARDS ---- */
+    .contact-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 240px;
+      flex: 1;
+    }
+    .contact-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .contact-name { font-weight: 600; font-size: 15px; }
+    .contact-email { font-size: 13px; color: var(--text-tertiary); }
+
+    /* ---- OPTION TABS ---- */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin: 20px 0 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 18px;
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+    .tab-panel { display: none; padding-top: 24px; }
+    .tab-panel.active { display: block; }
+
+    /* ---- FOOTER ---- */
+    .site-footer {
+      border-top: 1px solid var(--border);
+      padding: 32px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    /* ---- ANIMATIONS ---- */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hero, .step-card, .callout {
+      animation: fadeUp 0.5s ease both;
+    }
+    .step-card:nth-child(2) { animation-delay: 0.08s; }
+    .step-card:nth-child(3) { animation-delay: 0.16s; }
+
+    @media (max-width: 600px) {
+      .hero { padding: 48px 20px 32px; }
+      .page-layout { padding: 0 20px 48px; }
+      .step-card { padding: 20px; }
+      .contact-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#" class="header-brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Flodesk Data Team
+      </a>
+      <span class="header-tag">Internal Guide</span>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">MCP Integration</div>
+    <h1>Connecting Claude to Holistics via MCP</h1>
+    <p class="hero-desc">Query and explore Flodesk's business data through natural conversation with Claude — no SQL required.</p>
+  </div>
+
+  <!-- PAGE -->
+  <div class="page-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <nav>
+        <a href="#overview" class="active">Overview</a>
+        <a href="#contacts">Contact Points</a>
+        <a href="#step1">Step 1 — API Key</a>
+        <a href="#step2">Step 2 — Connect</a>
+        <a href="#step3">Step 3 — Verify</a>
+        <a href="#responsibilities">API Key Rules</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- OVERVIEW -->
+      <section id="overview">
+        <h2>Overview</h2>
+        <p class="section-lead">This guide walks you through connecting Claude Desktop or Claude.ai to Holistics via MCP (Model Context Protocol).</p>
+
+        <div class="callout warning">
+          <span class="callout-icon">⚠️</span>
+          <div><strong>PII data (emails, names, etc.) is intentionally masked in Holistics.</strong> If you need to access PII data, please use the <a href="https://metabase.fdnw.net/dashboard/5-users-lookup?email=&hash_email=&hashed_ip_adress=&user_id=" target="_blank">Metabase self-serve tool</a> instead.</div>
+        </div>
+      </section>
+
+      <!-- CONTACTS -->
+      <section id="contacts">
+        <h2>Contact Points</h2>
+        <p class="section-lead">For any questions or issues related to this setup, reach out via Slack.</p>
+        <div class="contact-row">
+          <div class="contact-card">
+            <div class="contact-avatar">TN</div>
+            <div>
+              <div class="contact-name">Trung Nguyen</div>
+              <div class="contact-email">ntrung@flodesk.com</div>
+            </div>
+          </div>
+          <div class="contact-card">
+            <div class="contact-avatar">H</div>
+            <div>
+              <div class="contact-name">Hang</div>
+              <div class="contact-email">hang@flodesk.com</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 1 -->
+      <section id="step1">
+        <h2>Step 1 — Request a Holistics API Key</h2>
+        <p class="section-lead">Before you can connect Claude to Holistics, you need a personal Holistics API Key.</p>
+
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Create a request ticket</h3>
+          <p>Open the <a href="https://linear.app/flodesk/project/holistics-mcp-9498a849a3a4/issues" target="_blank">Holistics MCP project on Linear</a> and create a new issue to request API key enablement.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Include your details</h3>
+          <p>Add your <strong>name</strong> and <strong>team</strong> in the ticket title so the Data Team can identify and route your request.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Wait for follow-up</h3>
+          <p>Trung or Hang will follow up to enable your access and guide you to generate your personal API key.</p>
+        </div>
+
+        <div class="callout info">
+          <span class="callout-icon">🔐</span>
+          <div><strong>Your API key is personal and non-transferable.</strong> You are responsible for keeping it secure. Do not share it with others, commit it to any codebase, or store it in a shared document. If your key is compromised, contact Trung or Hang immediately to revoke and reissue it.</div>
+        </div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section id="step2">
+        <h2>Step 2 — Connect Claude to Holistics</h2>
+        <p class="section-lead">Choose your preferred Claude client below.</p>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="desktop" onclick="switchTab('desktop')">Claude Desktop</button>
+          <button class="tab-btn" data-tab="web" onclick="switchTab('web')">Claude.ai (Web)</button>
+        </div>
+
+        <!-- DESKTOP TAB -->
+        <div id="tab-desktop" class="tab-panel active">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <h3>Open the config file</h3>
+            <p>In Claude Desktop, go to <strong>Settings → Developer → Edit Config</strong>. This opens the file <code>claude_desktop_config.json</code> in your text editor.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <h3>Add the Holistics MCP server</h3>
+            <p>If the file is empty, paste the full config below. If it already has content, add the <code>"holistics"</code> block inside the existing <code>"mcpServers"</code> object.</p>
+
+            <h3>Empty file — paste this entirely:</h3>
+            <div class="code-block-wrapper">
+              <div class="code-header">
+                <span class="code-label">claude_desktop_config.json</span>
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <pre><code>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"holistics"</span>: {
+      <span class="k">"command"</span>: <span class="s">"npx"</span>,
+      <span class="k">"args"</span>: [
+        <span class="s">"-y"</span>,
+        <span class="s">"mcp-remote"</span>,
+        <span class="s">"https://mcp-us.holistics.io/reporting/mcp"</span>,
+        <span class="s">"--header"</span>,
+        <span class="s">"X-Holistics-Key:<span style="color:#E8A87C;font-style:italic">YOUR_API_KEY_HERE</span>"</span>
+      ]
+    }
+  }
+}</code></pre>
+            </div>
+
+            <h3>File already has content — add only the <code>holistics</code> block:</h3>
+            <div class="code-block-wrapper">
+              <div class="code-header">
+                <span class="code-label">claude_desktop_config.json</span>
+                <button class="code-copy" onclick="copyCode(this)">Copy</button>
+              </div>
+              <pre><code>{
+  <span class="k">"mcpServers"</span>: {
+    <span class="c">// ... your existing servers ...</span>
+    <span class="k">"holistics"</span>: {
+      <span class="k">"command"</span>: <span class="s">"npx"</span>,
+      <span class="k">"args"</span>: [
+        <span class="s">"-y"</span>,
+        <span class="s">"mcp-remote"</span>,
+        <span class="s">"https://mcp-us.holistics.io/reporting/mcp"</span>,
+        <span class="s">"--header"</span>,
+        <span class="s">"X-Holistics-Key:<span style="color:#E8A87C;font-style:italic">YOUR_API_KEY_HERE</span>"</span>
+      ]
+    }
+  }
+}</code></pre>
+            </div>
+
+            <div class="callout warning">
+              <span class="callout-icon">⚠️</span>
+              <div>Replace <code>YOUR_API_KEY_HERE</code> with your actual API key. Do <strong>not</strong> add a space after <code>X-Holistics-Key:</code></div>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <h3>Restart Claude Desktop</h3>
+            <p>Save the file, then fully quit Claude Desktop (<strong>Cmd + Q</strong> on macOS) and reopen it. A simple window close won't reload the config.</p>
+          </div>
+        </div>
+
+        <!-- WEB TAB -->
+        <div id="tab-web" class="tab-panel">
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <h3>Open connector settings</h3>
+            <p>Go to <a href="https://claude.ai/settings/connectors" target="_blank">claude.ai/settings/connectors</a> and click <strong>Add custom connector</strong>.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <h3>Enter the Holistics MCP details</h3>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td>Name</td><td><code>Holistics</code></td></tr>
+                  <tr><td>URL</td><td><code>https://mcp-us.holistics.io/reporting/mcp</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <h3>Authenticate</h3>
+            <p>Click <strong>Add</strong>, then <strong>Connect</strong> and follow the OAuth flow to authenticate with your Holistics account. No API key needed for this method.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">4</div>
+            <h3>Enable in chat</h3>
+            <p>In any chat, click the <strong>tools icon</strong> (left of the message field) and enable <strong>Holistics</strong> under Connectors.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section id="step3">
+        <h2>Step 3 — Verify the Connection</h2>
+        <p class="section-lead">Confirm everything is working with a quick test.</p>
+
+        <div class="step-card">
+          <div class="step-number">✓</div>
+          <h3>Test it out</h3>
+          <p>Open a new Claude conversation and ask:</p>
+          <div class="code-block-wrapper">
+            <div class="code-header">
+              <span class="code-label">Prompt</span>
+              <button class="code-copy" onclick="copyCode(this)">Copy</button>
+            </div>
+            <pre><code>Check connection to Holistics</code></pre>
+          </div>
+          <p>If the connection is working, Claude will confirm the connection and show you available datasets.</p>
+        </div>
+
+        <div class="callout success">
+          <span class="callout-icon">🎉</span>
+          <div>Once verified, you're all set! You can now ask Claude questions about Flodesk's business data in natural language.</div>
+        </div>
+      </section>
+
+      <!-- API KEY RULES -->
+      <section id="responsibilities">
+        <h2>API Key Responsibilities</h2>
+        <p class="section-lead">By requesting and using a Holistics API key, you agree to the following.</p>
+
+        <ul class="rules-list">
+          <li class="do">Keep your API key <strong>private and secure</strong></li>
+          <li class="do">Use it only for <strong>legitimate work purposes</strong> at Flodesk</li>
+          <li class="dont">Do <strong>not</strong> share your API key with colleagues — each person must have their own</li>
+          <li class="dont">Do <strong>not</strong> use your key to extract or export data beyond your role's permitted access</li>
+        </ul>
+
+        <div class="callout danger">
+          <span class="callout-icon">🛑</span>
+          <div>Flodesk's Data Team reserves the right to <strong>revoke any API key at any time</strong> if misuse is detected.</div>
+        </div>
+      </section>
+
+      <!-- TROUBLESHOOTING -->
+      <section id="troubleshooting">
+        <h2>Troubleshooting</h2>
+        <p class="section-lead">Common issues and how to resolve them.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th style="width:40%">Issue</th><th>Solution</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Claude doesn't show Holistics tools</td>
+                <td>Fully restart Claude Desktop after editing config (<strong>Cmd + Q</strong>, then reopen)</td>
+              </tr>
+              <tr>
+                <td>API key not working</td>
+                <td>Contact Trung or Hang to verify your key is enabled</td>
+              </tr>
+              <tr>
+                <td>Can't see a dataset / can't query</td>
+                <td>Your role may not have access — contact Trung or Hang</td>
+              </tr>
+              <tr>
+                <td>Need PII data</td>
+                <td>Use the <a href="https://metabase.fdnw.net/dashboard/5-users-lookup?email=&hash_email=&hashed_ip_adress=&user_id=" target="_blank">Metabase self-serve tool</a> instead</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    Flodesk Data Team · Internal Documentation · Last updated March 2026
+  </footer>
+
+  <script>
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    // Copy code
+    function copyCode(btn) {
+      const code = btn.closest('.code-block-wrapper').querySelector('code');
+      navigator.clipboard.writeText(code.textContent).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      });
+    }
+
+    // Sidebar active state on scroll
+    const sections = document.querySelectorAll('.content section');
+    const navLinks = document.querySelectorAll('.sidebar a');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          const link = document.querySelector(`.sidebar a[href="#${entry.target.id}"]`);
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-100px 0px -60% 0px', threshold: 0 });
+    sections.forEach(s => observer.observe(s));
+  </script>
+</body>
+</html>
